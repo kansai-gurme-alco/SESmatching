@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SESマッチング・プロフェッショナル</title>
+    <title>SES Matcher Pro | 高精度案件マッチング</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Library for PDF parsing -->
@@ -14,96 +14,118 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
-        body { font-family: 'Noto Sans JP', 'Inter', sans-serif; background-color: #f8fafc; }
+        body { 
+            font-family: 'Noto Sans JP', 'Inter', sans-serif; 
+            background-color: #f1f5f9;
+            color: #1e293b;
+        }
+        .business-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid #e2e8f0;
+        }
         .loading-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
+            border: 3px solid #e2e8f0;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            border-left-color: #3b82f6;
+            border-left-color: #0f172a;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .match-score-gradient {
-            background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+        .score-bar-bg {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-5xl mx-auto">
+<body class="p-4 md:p-10">
+    <div class="max-w-6xl mx-auto">
         <!-- Header -->
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-slate-800">SES案件・要員マッチングツール</h1>
-            <p class="text-slate-500 mt-2">AIによる高度な解析で、最適なマッチングと提案トークを生成します。</p>
+        <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between border-b border-slate-300 pb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">SES Matcher Pro</h1>
+                <p class="text-slate-500 text-sm mt-1">AIを活用したエンジニア・案件適性分析ソリューション</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs font-semibold text-slate-600 hover:text-blue-700 bg-white border border-slate-300 px-3 py-1.5 rounded-md shadow-sm transition-all">
+                    APIキー取得はこちら ↗
+                </a>
+            </div>
         </header>
 
-        <!-- API Key Setup -->
-        <div id="api-setup" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
-            <h2 class="text-lg font-semibold mb-4 flex items-center">
-                <span class="bg-blue-100 text-blue-600 p-2 rounded-lg mr-2">🔑</span>
-                API設定
-            </h2>
-            <div class="flex flex-col md:flex-row gap-4 items-end">
-                <div class="flex-grow w-full">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Google AI Studio APIキー</label>
-                    <input type="password" id="api-key" placeholder="AIキーを入力してください" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+        <!-- API Key Setup (Minimalist) -->
+        <div id="api-setup" class="business-card p-5 mb-8 bg-slate-50">
+            <div class="flex flex-col md:flex-row gap-4 items-center">
+                <div class="flex items-center gap-3 min-w-max">
+                    <span class="text-slate-400 text-xl italic">Settings:</span>
                 </div>
-                <button onclick="saveApiKey()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">設定</button>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-sm text-blue-600 hover:underline mb-2">APIキーを取得する</a>
+                <div class="relative flex-grow w-full">
+                    <input type="password" id="api-key" placeholder="Google AI API Key を入力" class="w-full pl-4 pr-12 py-2.5 border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-800 outline-none text-sm">
+                    <button onclick="saveApiKey()" class="absolute right-1.5 top-1.5 bg-slate-800 hover:bg-slate-700 text-white px-4 py-1.5 rounded text-xs font-medium transition-colors">適用</button>
+                </div>
+                <div id="api-status" class="text-xs text-slate-500 whitespace-nowrap">未設定</div>
             </div>
-            <p id="api-status" class="mt-2 text-xs text-slate-500 italic">※APIキーはブラウザに保存されず、リロードすると消去されます（安全のため）。</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <!-- Project Input -->
-            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-lg font-semibold mb-4 flex items-center">
-                    <span class="bg-purple-100 text-purple-600 p-2 rounded-lg mr-2">📋</span>
-                    案件情報
-                </h2>
-                <textarea id="project-text" rows="8" placeholder="案件の詳細内容を貼り付けてください（スキル、期間、単価、場所など）" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none mb-4"></textarea>
-                <button onclick="inputProject()" id="btn-project" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium transition-all">案件を記憶</button>
-                <div id="project-badge" class="hidden mt-3 text-sm text-green-600 font-medium">✓ 案件情報を記憶しました</div>
-            </section>
-
-            <!-- Human Resource Input -->
-            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-lg font-semibold mb-4 flex items-center">
-                    <span class="bg-orange-100 text-orange-600 p-2 rounded-lg mr-2">👤</span>
-                    要員情報（スキルシート）
-                </h2>
-                <textarea id="resource-text" rows="4" placeholder="補足情報や経歴の概要など（任意）" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none mb-4"></textarea>
-                
-                <div class="border-2 border-dashed border-slate-200 rounded-lg p-4 mb-4 text-center">
-                    <input type="file" id="file-input" class="hidden" accept=".pdf,.xlsx,.xls,.docx">
-                    <button onclick="document.getElementById('file-input').click()" class="text-sm text-slate-600 hover:text-blue-600 font-medium">
-                        📁 ファイルをアップロード (PDF, Excel, Word)
-                    </button>
-                    <div id="file-name" class="mt-2 text-xs text-slate-500 italic"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+            <!-- Project Section -->
+            <section class="flex flex-col h-full">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h2 class="text-sm font-bold uppercase tracking-widest text-slate-500">Project Info / 案件情報</h2>
+                    <span id="project-badge" class="hidden text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">READY</span>
                 </div>
+                <div class="business-card p-0 flex-grow overflow-hidden flex flex-col">
+                    <textarea id="project-text" class="w-full p-5 flex-grow min-h-[300px] text-sm leading-relaxed outline-none resize-none" placeholder="案件概要、必須スキル、歓迎要件、稼働条件などを入力してください..."></textarea>
+                    <div class="p-3 bg-slate-50 border-t border-slate-200">
+                        <button onclick="inputProject()" id="btn-project" class="w-full bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 py-2 rounded text-sm font-semibold shadow-sm transition-all">情報を読み込む</button>
+                    </div>
+                </div>
+            </section>
 
-                <button onclick="inputResource()" id="btn-resource" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-medium transition-all">要員を記憶</button>
-                <div id="resource-badge" class="hidden mt-3 text-sm text-green-600 font-medium">✓ 要員情報を記憶しました</div>
+            <!-- Resource Section -->
+            <section class="flex flex-col h-full">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h2 class="text-sm font-bold uppercase tracking-widest text-slate-500">Resource Info / 要員情報</h2>
+                    <span id="resource-badge" class="hidden text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">READY</span>
+                </div>
+                <div class="business-card p-0 flex-grow overflow-hidden flex flex-col">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+                        <input type="file" id="file-input" class="hidden" accept=".pdf,.xlsx,.xls,.docx">
+                        <div onclick="document.getElementById('file-input').click()" class="cursor-pointer border-2 border-dashed border-slate-300 rounded-lg p-6 hover:border-slate-400 hover:bg-slate-100 transition-all text-center">
+                            <p class="text-sm font-medium text-slate-600">スキルシート・経歴書をアップロード</p>
+                            <p class="text-[10px] text-slate-400 mt-1">PDF / Word / Excel 対応</p>
+                            <div id="file-name" class="mt-2 text-xs text-blue-600 font-medium truncate"></div>
+                        </div>
+                    </div>
+                    <textarea id="resource-text" class="w-full p-5 flex-grow min-h-[148px] text-sm leading-relaxed outline-none resize-none" placeholder="補足情報（性格、通勤希望、本人意向など）を入力..."></textarea>
+                    <div class="p-3 bg-slate-50 border-t border-slate-200">
+                        <button onclick="inputResource()" id="btn-resource" class="w-full bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 py-2 rounded text-sm font-semibold shadow-sm transition-all">情報を読み込む</button>
+                    </div>
+                </div>
             </section>
         </div>
 
-        <!-- Start Matching -->
-        <div class="text-center mb-12">
-            <button onclick="startMatching()" id="match-button" class="bg-slate-800 hover:bg-slate-900 text-white text-lg px-12 py-4 rounded-full font-bold shadow-lg transition-all transform hover:scale-105 disabled:bg-slate-300 disabled:scale-100" disabled>
-                AIマッチングを開始する
+        <!-- Action Button -->
+        <div class="text-center mb-16">
+            <button onclick="startMatching()" id="match-button" class="group relative inline-flex items-center justify-center px-12 py-4 font-bold text-white transition-all duration-200 bg-slate-900 font-pj rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+                マッチング分析を実行する
             </button>
-            <p id="match-hint" class="mt-4 text-sm text-slate-500 italic">案件と要員の両方を記憶させるとボタンが有効になります</p>
+            <p id="match-hint" class="mt-4 text-xs text-slate-400 tracking-wide uppercase">Both inputs required to unlock</p>
         </div>
 
-        <!-- Result Section -->
-        <div id="result-container" class="hidden space-y-8 animate-fade-in">
-            <div id="loading-view" class="flex flex-col items-center justify-center p-20 bg-white rounded-2xl border border-slate-200 shadow-xl">
-                <div class="loading-spinner mb-4"></div>
-                <p class="text-slate-600 font-medium">AIがマッチング度合いを深層分析中...</p>
+        <!-- Result Container -->
+        <div id="result-container" class="hidden mb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div id="loading-view" class="flex flex-col items-center justify-center p-24 business-card bg-white">
+                <div class="loading-spinner mb-6"></div>
+                <p class="text-slate-800 font-semibold tracking-tight text-lg">AI適性分析エンジン稼働中</p>
+                <p class="text-slate-400 text-sm mt-2">スキルの整合性とプロジェクトリスクを検証しています...</p>
             </div>
 
-            <div id="analysis-content" class="hidden space-y-6 mb-10">
-                <!-- Result UI injected here -->
+            <div id="analysis-content" class="hidden space-y-8">
+                <!-- Data will be injected here -->
             </div>
         </div>
     </div>
@@ -124,7 +146,7 @@
             const file = e.target.files[0];
             if (!file) return;
             
-            document.getElementById('file-name').innerText = `解析中: ${file.name}...`;
+            document.getElementById('file-name').innerText = `解析中...`;
             const fileType = file.name.split('.').pop().toLowerCase();
             
             try {
@@ -137,10 +159,10 @@
                     text = await parseExcel(file);
                 }
                 config.extractedFileText = text;
-                document.getElementById('file-name').innerText = `解析済み: ${file.name} (${text.length}文字)`;
+                document.getElementById('file-name').innerText = `読込済: ${file.name}`;
             } catch (err) {
                 console.error(err);
-                document.getElementById('file-name').innerText = "ファイルの解析に失敗しました。";
+                document.getElementById('file-name').innerText = "解析失敗";
             }
         });
 
@@ -177,8 +199,8 @@
             const key = document.getElementById('api-key').value.trim();
             if (key) {
                 config.apiKey = key;
-                document.getElementById('api-status').innerText = "✅ APIキーが設定されました。";
-                document.getElementById('api-status').classList.add('text-green-600');
+                document.getElementById('api-status').innerText = "認証済";
+                document.getElementById('api-status').className = "text-xs text-emerald-600 font-bold";
             }
         }
 
@@ -206,7 +228,7 @@
 
         async function startMatching() {
             if (!config.apiKey) {
-                alert("先にAPIキーを設定してください。");
+                alert("APIキーを適用してください。");
                 return;
             }
 
@@ -217,27 +239,31 @@
             resultContainer.classList.remove('hidden');
             loadingView.classList.remove('hidden');
             analysisContent.classList.add('hidden');
-            analysisContent.innerHTML = "";
 
-            // Smooth scroll to results
             resultContainer.scrollIntoView({ behavior: 'smooth' });
 
             const combinedResource = `【テキスト情報】\n${config.resourceData}\n\n【ファイル抽出情報】\n${config.extractedFileText}`;
             
             const prompt = `
-            あなたは熟練のSES営業・コーディネーターです。
-            以下の「案件情報」と「要員情報（経歴）」を比較し、詳細なマッチング分析を行ってください。
-            出力は必ず以下のJSONフォーマットのみを返してください。
+            あなたは超一流のITコンサルタント兼SES営業チーフです。
+            「案件情報」と「要員情報」を冷徹かつ客観的に比較し、以下のJSONフォーマットで分析結果を出力してください。
+            特に「なぜその点数なのか」の分析をロジカルに深掘りしてください。
 
             JSON構造:
             {
-              "score": 0から100の数値,
-              "precision": "適合率をパーセントで表記",
-              "reason": "マッチしている具体的な根拠（箇条書き形式の文字列）",
-              "merit": "紹介する際のメリット（箇条書き形式の文字列）",
-              "demerit": "懸念点・デメリット（箇条書き形式の文字列）",
-              "judgment": "提案すべきか見送るべきかのライン判断とその理由",
-              "sales_talk": "お客様への魅力的な紹介用セールストーク"
+              "score": 0-100の整数,
+              "score_analysis": {
+                 "skill": "技術スタックの一致度(0-100)",
+                 "experience": "業界・類似業務経験の一致度(0-100)",
+                 "condition": "単価・期間・場所・稼働の整合性(0-100)",
+                 "risk": "離脱リスクやスキル不足懸念の低さ(0-100)"
+              },
+              "detailed_breakdown": "なぜその評価点（score）になったのか、各指標に基づいた定性的な分析結果。不足している要素、過剰な要素を明確にする。",
+              "reasons": ["マッチングの根拠1", "マッチングの根拠2"],
+              "merits": ["顧客へのメリット1", "顧客へのメリット2"],
+              "demerits": ["想定されるリスク・デメリット1", "想定されるリスク・デメリット2"],
+              "final_judgment": "提案すべきか見送るべきかのライン判断とその戦略的理由",
+              "sales_pitch": "顧客の決裁者に刺さる、プロフェッショナルな紹介口上"
             }
 
             【案件情報】
@@ -253,27 +279,19 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            responseMimeType: "application/json"
-                        }
+                        generationConfig: { responseMimeType: "application/json" }
                     })
                 });
 
-                if (!response.ok) throw new Error("APIリクエストに失敗しました。キーが正しいか確認してください。");
+                if (!response.ok) throw new Error("API疎通エラー");
 
                 const data = await response.json();
                 const result = JSON.parse(data.candidates[0].content.parts[0].text);
-                
                 renderResult(result);
             } catch (err) {
                 loadingView.classList.add('hidden');
                 analysisContent.classList.remove('hidden');
-                analysisContent.innerHTML = `
-                    <div class="bg-red-50 text-red-700 p-6 rounded-xl border border-red-200">
-                        <h3 class="font-bold mb-2">エラーが発生しました</h3>
-                        <p>${err.message}</p>
-                    </div>
-                `;
+                analysisContent.innerHTML = `<div class="p-8 business-card text-red-600 bg-red-50 font-bold border-red-200">エラー: ${err.message}</div>`;
             }
         }
 
@@ -283,90 +301,107 @@
             loadingView.classList.add('hidden');
             analysisContent.classList.remove('hidden');
 
-            const scoreColor = data.score >= 80 ? 'text-emerald-600' : (data.score >= 60 ? 'text-amber-600' : 'text-red-600');
-            const judgmentBg = data.score >= 70 ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-800';
+            const getScoreColor = (s) => s >= 80 ? 'text-blue-700' : (s >= 50 ? 'text-slate-700' : 'text-red-700');
+            const getBarColor = (s) => s >= 80 ? 'bg-blue-600' : (s >= 50 ? 'bg-slate-400' : 'bg-red-400');
 
             analysisContent.innerHTML = `
-                <!-- Score Card -->
-                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div class="text-center md:text-left">
-                            <h3 class="text-slate-500 font-medium mb-1">マッチングスコア</h3>
-                            <div class="text-6xl font-black ${scoreColor}">${data.score}<span class="text-2xl ml-1">pts</span></div>
-                            <p class="mt-2 text-slate-400 text-sm">適合率: ${data.precision}</p>
+                <!-- Top Summary Card -->
+                <div class="business-card p-10 bg-white">
+                    <div class="flex flex-col md:flex-row gap-12 items-center">
+                        <div class="text-center md:border-r border-slate-200 md:pr-12">
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Matching Score</h3>
+                            <div class="text-7xl font-black ${getScoreColor(data.score)} tracking-tighter">${data.score}<span class="text-xl font-bold text-slate-300 ml-1">/100</span></div>
                         </div>
-                        <div class="flex-grow max-w-md w-full">
-                            <div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full match-score-gradient transition-all duration-1000" style="width: ${data.score}%"></div>
-                            </div>
-                            <div class="flex justify-between text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-wider">
-                                <span>Low</span>
-                                <span>Medium</span>
-                                <span>High Match</span>
-                            </div>
+                        
+                        <div class="flex-grow grid grid-cols-2 gap-x-8 gap-y-4 w-full">
+                            ${Object.entries(data.score_analysis).map(([key, val]) => `
+                                <div>
+                                    <div class="flex justify-between text-[10px] font-bold uppercase text-slate-500 mb-1.5">
+                                        <span>${key === 'skill' ? 'Technical Skill' : key === 'experience' ? 'Industry Exp' : key === 'condition' ? 'Condition Fit' : 'Risk Management'}</span>
+                                        <span>${val}%</span>
+                                    </div>
+                                    <div class="score-bar-bg">
+                                        <div class="h-full ${getBarColor(val)} rounded-full" style="width: ${val}%"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Analysis Process Section -->
+                <div class="business-card p-8 bg-slate-900 text-white">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span> Score Analysis / 評価プロセス分析
+                    </h4>
+                    <p class="text-slate-300 text-sm leading-relaxed font-medium">
+                        ${data.detailed_breakdown}
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <!-- Reasons & Merits -->
-                    <div class="space-y-6">
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                            <h4 class="font-bold text-slate-800 mb-3 flex items-center">
-                                <span class="mr-2">💡</span> マッチングの根拠
-                            </h4>
-                            <div class="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">${data.reason}</div>
+                    <div class="space-y-8">
+                        <div class="business-card p-6 border-l-4 border-l-slate-800">
+                            <h4 class="text-sm font-bold text-slate-800 mb-4">適合の根拠</h4>
+                            <ul class="space-y-3 text-sm text-slate-600">
+                                ${data.reasons.map(r => `<li class="flex items-start"><span class="text-slate-400 mr-2">・</span>${r}</li>`).join('')}
+                            </ul>
                         </div>
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
-                            <h4 class="font-bold text-emerald-800 mb-3 flex items-center">
-                                <span class="mr-2">✨</span> メリット
-                            </h4>
-                            <div class="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">${data.merit}</div>
+                        <div class="business-card p-6 border-l-4 border-l-blue-600">
+                            <h4 class="text-sm font-bold text-blue-900 mb-4">顧客メリット</h4>
+                            <ul class="space-y-3 text-sm text-slate-600">
+                                ${data.merits.map(m => `<li class="flex items-start"><span class="text-blue-300 mr-2">・</span>${m}</li>`).join('')}
+                            </ul>
                         </div>
                     </div>
 
                     <!-- Demerits & Judgment -->
-                    <div class="space-y-6">
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-amber-400">
-                            <h4 class="font-bold text-amber-800 mb-3 flex items-center">
-                                <span class="mr-2">⚠️</span> 懸念点・デメリット
-                            </h4>
-                            <div class="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">${data.demerit}</div>
+                    <div class="space-y-8">
+                        <div class="business-card p-6 border-l-4 border-l-red-400">
+                            <h4 class="text-sm font-bold text-red-900 mb-4">懸念点・リスク</h4>
+                            <ul class="space-y-3 text-sm text-slate-600">
+                                ${data.demerits.map(d => `<li class="flex items-start"><span class="text-red-300 mr-2">・</span>${d}</li>`).join('')}
+                            </ul>
                         </div>
-                        <div class="${judgmentBg} p-6 rounded-xl border">
-                            <h4 class="font-bold mb-3 flex items-center text-inherit">
-                                <span class="mr-2">⚖️</span> ライン判断
-                            </h4>
-                            <div class="text-sm leading-relaxed whitespace-pre-wrap">${data.judgment}</div>
+                        <div class="business-card p-6 bg-slate-50">
+                            <h4 class="text-sm font-bold text-slate-800 mb-4">総合判断 / 戦略</h4>
+                            <p class="text-sm text-slate-700 leading-relaxed">${data.final_judgment}</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Sales Talk -->
-                <div class="bg-slate-800 text-white p-8 rounded-2xl shadow-xl">
-                    <h4 class="font-bold text-xl mb-4 flex items-center">
-                        <span class="mr-2 text-2xl">📣</span> 紹介用セールストーク
-                    </h4>
-                    <div class="bg-slate-700/50 p-6 rounded-xl text-slate-100 leading-relaxed italic border border-slate-600">
-                        「${data.sales_talk}」
+                <div class="business-card p-8 border-t-4 border-t-slate-800">
+                    <h4 class="text-sm font-bold text-slate-800 mb-5 uppercase tracking-wider">Professional Sales Pitch</h4>
+                    <div class="relative">
+                        <div class="absolute -left-2 -top-2 text-4xl text-slate-200 font-serif">“</div>
+                        <p id="sales-pitch-text" class="relative z-10 text-lg text-slate-700 font-medium leading-loose pl-4 italic">
+                            ${data.sales_pitch}
+                        </p>
+                        <div class="absolute -right-2 -bottom-2 text-4xl text-slate-200 font-serif">”</div>
                     </div>
-                    <button onclick="copySalesTalk()" class="mt-4 text-xs bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded transition-colors">
-                        クリップボードにコピー
-                    </button>
+                    <div class="mt-8 flex justify-end">
+                        <button onclick="copyPitch()" class="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-800 border-b border-slate-300 pb-1 transition-all">Copy to Clipboard</button>
+                    </div>
                 </div>
             `;
             analysisContent.scrollIntoView({ behavior: 'smooth' });
         }
 
-        function copySalesTalk() {
-            const talk = document.querySelector('.italic').innerText.replace(/^「|」$/g, '');
+        function copyPitch() {
+            const text = document.getElementById('sales-pitch-text').innerText;
             const dummy = document.createElement("textarea");
             document.body.appendChild(dummy);
-            dummy.value = talk;
+            dummy.value = text;
             dummy.select();
             document.execCommand("copy");
             document.body.removeChild(dummy);
-            alert("コピーしました");
+            
+            const btn = event.target;
+            const original = btn.innerText;
+            btn.innerText = "COPIED!";
+            setTimeout(() => btn.innerText = original, 2000);
         }
     </script>
 </body>
