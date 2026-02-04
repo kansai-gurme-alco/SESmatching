@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SESマッチング・プロフェッショナル</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Library for PDF parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <!-- Library for Excel parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Library for Word parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        body { font-family: 'Noto Sans JP', 'Inter', sans-serif; background-color: #f8fafc; }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3b82f6;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .match-score-gradient {
+            background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-slate-800">SES案件・要員マッチングツール</h1>
+            <p class="text-slate-500 mt-2">AIによる高度な解析で、最適なマッチングと提案トークを生成します。</p>
+        </header>
+
+        <!-- API Key Setup -->
+        <div id="api-setup" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+            <h2 class="text-lg font-semibold mb-4 flex items-center">
+                <span class="bg-blue-100 text-blue-600 p-2 rounded-lg mr-2">🔑</span>
+                API設定
+            </h2>
+            <div class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-grow w-full">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Google AI Studio APIキー</label>
+                    <input type="password" id="api-key" placeholder="AIキーを入力してください" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <button onclick="saveApiKey()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">設定</button>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-sm text-blue-600 hover:underline mb-2">APIキーを取得する</a>
+            </div>
+            <p id="api-status" class="mt-2 text-xs text-slate-500 italic">※APIキーはブラウザに保存されず、リロードすると消去されます（安全のため）。</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Project Input -->
+            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <span class="bg-purple-100 text-purple-600 p-2 rounded-lg mr-2">📋</span>
+                    案件情報
+                </h2>
+                <textarea id="project-text" rows="8" placeholder="案件の詳細内容を貼り付けてください（スキル、期間、単価、場所など）" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none mb-4"></textarea>
+                <button onclick="inputProject()" id="btn-project" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium transition-all">案件を記憶</button>
+                <div id="project-badge" class="hidden mt-3 text-sm text-green-600 font-medium">✓ 案件情報を記憶しました</div>
+            </section>
+
+            <!-- Human Resource Input -->
+            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <span class="bg-orange-100 text-orange-600 p-2 rounded-lg mr-2">👤</span>
+                    要員情報（スキルシート）
+                </h2>
+                <textarea id="resource-text" rows="4" placeholder="補足情報や経歴の概要など（任意）" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none mb-4"></textarea>
+                
+                <div class="border-2 border-dashed border-slate-200 rounded-lg p-4 mb-4 text-center">
+                    <input type="file" id="file-input" class="hidden" accept=".pdf,.xlsx,.xls,.docx">
+                    <button onclick="document.getElementById('file-input').click()" class="text-sm text-slate-600 hover:text-blue-600 font-medium">
+                        📁 ファイルをアップロード (PDF, Excel, Word)
+                    </button>
+                    <div id="file-name" class="mt-2 text-xs text-slate-500 italic"></div>
+                </div>
+
+                <button onclick="inputResource()" id="btn-resource" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-medium transition-all">要員を記憶</button>
+                <div id="resource-badge" class="hidden mt-3 text-sm text-green-600 font-medium">✓ 要員情報を記憶しました</div>
+            </section>
+        </div>
+
+        <!-- Start Matching -->
+        <div class="text-center mb-12">
+            <button onclick="startMatching()" id="match-button" class="bg-slate-800 hover:bg-slate-900 text-white text-lg px-12 py-4 rounded-full font-bold shadow-lg transition-all transform hover:scale-105 disabled:bg-slate-300 disabled:scale-100" disabled>
+                AIマッチングを開始する
+            </button>
+            <p id="match-hint" class="mt-4 text-sm text-slate-500 italic">案件と要員の両方を記憶させるとボタンが有効になります</p>
+        </div>
+
+        <!-- Result Section -->
+        <div id="result-container" class="hidden space-y-8 animate-fade-in">
+            <div id="loading-view" class="flex flex-col items-center justify-center p-20 bg-white rounded-2xl border border-slate-200 shadow-xl">
+                <div class="loading-spinner mb-4"></div>
+                <p class="text-slate-600 font-medium">AIがマッチング度合いを深層分析中...</p>
+            </div>
+
+            <div id="analysis-content" class="hidden space-y-6 mb-10">
+                <!-- Result UI injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        let config = {
+            apiKey: '',
+            projectData: '',
+            resourceData: '',
+            extractedFileText: ''
+        };
+
+        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+
+        // File Parsing Logic
+        document.getElementById('file-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('file-name').innerText = `解析中: ${file.name}...`;
+            const fileType = file.name.split('.').pop().toLowerCase();
+            
+            try {
+                let text = "";
+                if (fileType === 'pdf') {
+                    text = await parsePDF(file);
+                } else if (fileType === 'docx') {
+                    text = await parseDocx(file);
+                } else if (fileType === 'xlsx' || fileType === 'xls') {
+                    text = await parseExcel(file);
+                }
+                config.extractedFileText = text;
+                document.getElementById('file-name').innerText = `解析済み: ${file.name} (${text.length}文字)`;
+            } catch (err) {
+                console.error(err);
+                document.getElementById('file-name').innerText = "ファイルの解析に失敗しました。";
+            }
+        });
+
+        async function parsePDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                fullText += content.items.map(item => item.str).join(' ');
+            }
+            return fullText;
+        }
+
+        async function parseDocx(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+            return result.value;
+        }
+
+        async function parseExcel(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer);
+            let fullText = "";
+            workbook.SheetNames.forEach(name => {
+                const sheet = workbook.Sheets[name];
+                fullText += XLSX.utils.sheet_to_txt(sheet);
+            });
+            return fullText;
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('api-key').value.trim();
+            if (key) {
+                config.apiKey = key;
+                document.getElementById('api-status').innerText = "✅ APIキーが設定されました。";
+                document.getElementById('api-status').classList.add('text-green-600');
+            }
+        }
+
+        function inputProject() {
+            const text = document.getElementById('project-text').value.trim();
+            if (!text) return;
+            config.projectData = text;
+            document.getElementById('project-badge').classList.remove('hidden');
+            checkReady();
+        }
+
+        function inputResource() {
+            const text = document.getElementById('resource-text').value.trim();
+            config.resourceData = text;
+            document.getElementById('resource-badge').classList.remove('hidden');
+            checkReady();
+        }
+
+        function checkReady() {
+            if (config.projectData && (config.resourceData || config.extractedFileText)) {
+                document.getElementById('match-button').disabled = false;
+                document.getElementById('match-hint').classList.add('hidden');
+            }
+        }
+
+        async function startMatching() {
+            if (!config.apiKey) {
+                alert("先にAPIキーを設定してください。");
+                return;
+            }
+
+            const resultContainer = document.getElementById('result-container');
+            const loadingView = document.getElementById('loading-view');
+            const analysisContent = document.getElementById('analysis-content');
+
+            resultContainer.classList.remove('hidden');
+            loadingView.classList.remove('hidden');
+            analysisContent.classList.add('hidden');
+            analysisContent.innerHTML = "";
+
+            // Smooth scroll to results
+            resultContainer.scrollIntoView({ behavior: 'smooth' });
+
+            const combinedResource = `【テキスト情報】\n${config.resourceData}\n\n【ファイル抽出情報】\n${config.extractedFileText}`;
+            
+            const prompt = `
+            あなたは熟練のSES営業・コーディネーターです。
+            以下の「案件情報」と「要員情報（経歴）」を比較し、詳細なマッチング分析を行ってください。
+            出力は必ず以下のJSONフォーマットのみを返してください。
+
+            JSON構造:
+            {
+              "score": 0から100の数値,
+              "precision": "適合率をパーセントで表記",
+              "reason": "マッチしている具体的な根拠（箇条書き形式の文字列）",
+              "merit": "紹介する際のメリット（箇条書き形式の文字列）",
+              "demerit": "懸念点・デメリット（箇条書き形式の文字列）",
+              "judgment": "提案すべきか見送るべきかのライン判断とその理由",
+              "sales_talk": "お客様への魅力的な紹介用セールストーク"
+            }
+
+            【案件情報】
+            ${config.projectData}
+
+            【要員情報】
+            ${combinedResource}
+            `;
+
+            try {
+                const response = await fetch(`${API_URL}?key=${config.apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            responseMimeType: "application/json"
+                        }
+                    })
+                });
+
+                if (!response.ok) throw new Error("APIリクエストに失敗しました。キーが正しいか確認してください。");
+
+                const data = await response.json();
+                const result = JSON.parse(data.candidates[0].content.parts[0].text);
+                
+                renderResult(result);
+            } catch (err) {
+                loadingView.classList.add('hidden');
+                analysisContent.classList.remove('hidden');
+                analysisContent.innerHTML = `
+                    <div class="bg-red-50 text-red-700 p-6 rounded-xl border border-red-200">
+                        <h3 class="font-bold mb-2">エラーが発生しました</h3>
+                        <p>${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderResult(data) {
+            const loadingView = document.getElementById('loading-view');
+            const analysisContent = document.getElementById('analysis-content');
+            loadingView.classList.add('hidden');
+            analysisContent.classList.remove('hidden');
+
+            const scoreColor = data.score >= 80 ? 'text-emerald-600' : (data.score >= 60 ? 'text-amber-600' : 'text-red-600');
+            const judgmentBg = data.score >= 70 ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-800';
+
+            analysisContent.innerHTML = `
+                <!-- Score Card -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div class="text-center md:text-left">
+                            <h3 class="text-slate-500 font-medium mb-1">マッチングスコア</h3>
+                            <div class="text-6xl font-black ${scoreColor}">${data.score}<span class="text-2xl ml-1">pts</span></div>
+                            <p class="mt-2 text-slate-400 text-sm">適合率: ${data.precision}</p>
+                        </div>
+                        <div class="flex-grow max-w-md w-full">
+                            <div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full match-score-gradient transition-all duration-1000" style="width: ${data.score}%"></div>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-wider">
+                                <span>Low</span>
+                                <span>Medium</span>
+                                <span>High Match</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Reasons & Merits -->
+                    <div class="space-y-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h4 class="font-bold text-slate-800 mb-3 flex items-center">
+                                <span class="mr-2">💡</span> マッチングの根拠
+                            </h4>
+                            <div class="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">${data.reason}</div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
+                            <h4 class="font-bold text-emerald-800 mb-3 flex items-center">
+                                <span class="mr-2">✨</span> メリット
+                            </h4>
+                            <div class="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">${data.merit}</div>
+                        </div>
+                    </div>
+
+                    <!-- Demerits & Judgment -->
+                    <div class="space-y-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-amber-400">
+                            <h4 class="font-bold text-amber-800 mb-3 flex items-center">
+                                <span class="mr-2">⚠️</span> 懸念点・デメリット
+                            </h4>
+                            <div class="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">${data.demerit}</div>
+                        </div>
+                        <div class="${judgmentBg} p-6 rounded-xl border">
+                            <h4 class="font-bold mb-3 flex items-center text-inherit">
+                                <span class="mr-2">⚖️</span> ライン判断
+                            </h4>
+                            <div class="text-sm leading-relaxed whitespace-pre-wrap">${data.judgment}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales Talk -->
+                <div class="bg-slate-800 text-white p-8 rounded-2xl shadow-xl">
+                    <h4 class="font-bold text-xl mb-4 flex items-center">
+                        <span class="mr-2 text-2xl">📣</span> 紹介用セールストーク
+                    </h4>
+                    <div class="bg-slate-700/50 p-6 rounded-xl text-slate-100 leading-relaxed italic border border-slate-600">
+                        「${data.sales_talk}」
+                    </div>
+                    <button onclick="copySalesTalk()" class="mt-4 text-xs bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded transition-colors">
+                        クリップボードにコピー
+                    </button>
+                </div>
+            `;
+            analysisContent.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copySalesTalk() {
+            const talk = document.querySelector('.italic').innerText.replace(/^「|」$/g, '');
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = talk;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            alert("コピーしました");
+        }
+    </script>
+</body>
+</html>
