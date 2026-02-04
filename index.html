@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SES Matcher Pro | 高精度案件マッチング</title>
+    <title>Mcos非公式 SESマッチングツール</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Library for PDF parsing -->
@@ -16,26 +16,26 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
         body { 
             font-family: 'Noto Sans JP', 'Inter', sans-serif; 
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
             color: #1e293b;
         }
         .business-card {
             background: white;
             border-radius: 8px;
-            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
             border: 1px solid #e2e8f0;
         }
         .loading-spinner {
             border: 3px solid #e2e8f0;
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
-            border-left-color: #0f172a;
+            border-left-color: #334155;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .score-bar-bg {
-            background: #e2e8f0;
+            background: #f1f5f9;
             height: 8px;
             border-radius: 4px;
         }
@@ -46,63 +46,57 @@
         <!-- Header -->
         <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between border-b border-slate-300 pb-6">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">SES Matcher Pro</h1>
-                <p class="text-slate-500 text-sm mt-1">AIを活用したエンジニア・案件適性分析ソリューション</p>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Mcos非公式 SESマッチングツール</h1>
+                <p class="text-slate-500 text-sm mt-1">AIを活用したエンジニア・案件適性分析</p>
             </div>
             <div class="mt-4 md:mt-0">
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs font-semibold text-slate-600 hover:text-blue-700 bg-white border border-slate-300 px-3 py-1.5 rounded-md shadow-sm transition-all">
-                    APIキー取得はこちら ↗
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-slate-400 hover:text-slate-600">
+                    APIキー設定
                 </a>
             </div>
         </header>
 
-        <!-- API Key Setup (Minimalist) -->
-        <div id="api-setup" class="business-card p-5 mb-8 bg-slate-50">
+        <!-- API Key Setup -->
+        <div id="api-setup" class="business-card p-4 mb-8 bg-slate-50">
             <div class="flex flex-col md:flex-row gap-4 items-center">
-                <div class="flex items-center gap-3 min-w-max">
-                    <span class="text-slate-400 text-xl italic">Settings:</span>
-                </div>
                 <div class="relative flex-grow w-full">
-                    <input type="password" id="api-key" placeholder="Google AI API Key を入力" class="w-full pl-4 pr-12 py-2.5 border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-800 outline-none text-sm">
-                    <button onclick="saveApiKey()" class="absolute right-1.5 top-1.5 bg-slate-800 hover:bg-slate-700 text-white px-4 py-1.5 rounded text-xs font-medium transition-colors">適用</button>
+                    <input type="password" id="api-key" placeholder="Google AI API Keyを入力" class="w-full pl-4 pr-12 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-slate-800 outline-none text-sm">
+                    <button onclick="saveApiKey()" class="absolute right-1 top-1 bg-slate-800 text-white px-3 py-1 rounded text-xs">適用</button>
                 </div>
-                <div id="api-status" class="text-xs text-slate-500 whitespace-nowrap">未設定</div>
+                <div id="api-status" class="text-xs text-slate-400">未設定</div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
             <!-- Project Section -->
             <section class="flex flex-col h-full">
-                <div class="flex items-center justify-between mb-3 px-1">
-                    <h2 class="text-sm font-bold uppercase tracking-widest text-slate-500">Project Info / 案件情報</h2>
-                    <span id="project-badge" class="hidden text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">READY</span>
+                <div class="mb-2">
+                    <h2 class="text-xs font-bold uppercase text-slate-500">案件情報</h2>
                 </div>
-                <div class="business-card p-0 flex-grow overflow-hidden flex flex-col">
-                    <textarea id="project-text" class="w-full p-5 flex-grow min-h-[300px] text-sm leading-relaxed outline-none resize-none" placeholder="案件概要、必須スキル、歓迎要件、稼働条件などを入力してください..."></textarea>
-                    <div class="p-3 bg-slate-50 border-t border-slate-200">
-                        <button onclick="inputProject()" id="btn-project" class="w-full bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 py-2 rounded text-sm font-semibold shadow-sm transition-all">情報を読み込む</button>
+                <div class="business-card p-0 flex-grow flex flex-col">
+                    <textarea id="project-text" class="w-full p-4 flex-grow min-h-[250px] text-sm leading-relaxed outline-none resize-none" placeholder="案件の概要、スキル要件、条件などを入力してください"></textarea>
+                    <div class="p-2 bg-slate-50 border-t border-slate-200">
+                        <button onclick="inputProject()" id="btn-project" class="w-full bg-white border border-slate-300 text-slate-700 py-1.5 rounded text-xs font-semibold">情報をセットする</button>
                     </div>
                 </div>
             </section>
 
             <!-- Resource Section -->
             <section class="flex flex-col h-full">
-                <div class="flex items-center justify-between mb-3 px-1">
-                    <h2 class="text-sm font-bold uppercase tracking-widest text-slate-500">Resource Info / 要員情報</h2>
-                    <span id="resource-badge" class="hidden text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">READY</span>
+                <div class="mb-2">
+                    <h2 class="text-xs font-bold uppercase text-slate-500">要員情報</h2>
                 </div>
-                <div class="business-card p-0 flex-grow overflow-hidden flex flex-col">
-                    <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+                <div class="business-card p-0 flex-grow flex flex-col">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                         <input type="file" id="file-input" class="hidden" accept=".pdf,.xlsx,.xls,.docx">
-                        <div onclick="document.getElementById('file-input').click()" class="cursor-pointer border-2 border-dashed border-slate-300 rounded-lg p-6 hover:border-slate-400 hover:bg-slate-100 transition-all text-center">
-                            <p class="text-sm font-medium text-slate-600">スキルシート・経歴書をアップロード</p>
-                            <p class="text-[10px] text-slate-400 mt-1">PDF / Word / Excel 対応</p>
-                            <div id="file-name" class="mt-2 text-xs text-blue-600 font-medium truncate"></div>
+                        <div onclick="document.getElementById('file-input').click()" class="cursor-pointer border-2 border-dashed border-slate-300 rounded p-4 hover:bg-slate-100 text-center">
+                            <p class="text-xs text-slate-600 font-medium">経歴書（PDF/Word/Excel）を添付</p>
+                            <div id="file-name" class="mt-1 text-[10px] text-blue-600 truncate"></div>
                         </div>
                     </div>
-                    <textarea id="resource-text" class="w-full p-5 flex-grow min-h-[148px] text-sm leading-relaxed outline-none resize-none" placeholder="補足情報（性格、通勤希望、本人意向など）を入力..."></textarea>
-                    <div class="p-3 bg-slate-50 border-t border-slate-200">
-                        <button onclick="inputResource()" id="btn-resource" class="w-full bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 py-2 rounded text-sm font-semibold shadow-sm transition-all">情報を読み込む</button>
+                    <textarea id="resource-text" class="w-full p-4 flex-grow min-h-[140px] text-sm leading-relaxed outline-none resize-none" placeholder="補足情報を入力（任意）"></textarea>
+                    <div class="p-2 bg-slate-50 border-t border-slate-200">
+                        <button onclick="inputResource()" id="btn-resource" class="w-full bg-white border border-slate-300 text-slate-700 py-1.5 rounded text-xs font-semibold">情報をセットする</button>
                     </div>
                 </div>
             </section>
@@ -110,27 +104,44 @@
 
         <!-- Action Button -->
         <div class="text-center mb-16">
-            <button onclick="startMatching()" id="match-button" class="group relative inline-flex items-center justify-center px-12 py-4 font-bold text-white transition-all duration-200 bg-slate-900 font-pj rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-30 disabled:cursor-not-allowed" disabled>
-                マッチング分析を実行する
+            <button onclick="startMatching()" id="match-button" class="bg-slate-900 text-white px-10 py-3 rounded font-bold text-sm disabled:opacity-30 transition-all" disabled>
+                マッチング分析を開始
             </button>
-            <p id="match-hint" class="mt-4 text-xs text-slate-400 tracking-wide uppercase">Both inputs required to unlock</p>
         </div>
 
         <!-- Result Container -->
-        <div id="result-container" class="hidden mb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div id="loading-view" class="flex flex-col items-center justify-center p-24 business-card bg-white">
-                <div class="loading-spinner mb-6"></div>
-                <p class="text-slate-800 font-semibold tracking-tight text-lg">AI適性分析エンジン稼働中</p>
-                <p class="text-slate-400 text-sm mt-2">スキルの整合性とプロジェクトリスクを検証しています...</p>
+        <div id="result-container" class="hidden mb-20">
+            <div id="loading-view" class="flex flex-col items-center justify-center p-20 business-card">
+                <div class="loading-spinner mb-4"></div>
+                <p class="text-slate-600 text-sm">解析中...</p>
             </div>
 
-            <div id="analysis-content" class="hidden space-y-8">
-                <!-- Data will be injected here -->
+            <div id="analysis-content" class="hidden space-y-6">
+                <!-- Result Data Injected Here -->
+            </div>
+
+            <!-- Q&A Section -->
+            <div id="qa-container" class="hidden mt-10 space-y-4">
+                <div class="business-card p-6 bg-slate-50">
+                    <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
+                        要員詳細への質問（経歴書の内容に基づく）
+                    </h4>
+                    <div class="flex gap-2">
+                        <input type="text" id="qa-input" placeholder="例：AWSの設計経験はありますか？" class="flex-grow p-2 border border-slate-300 rounded text-sm outline-none">
+                        <button onclick="askQuestion()" id="qa-button" class="bg-slate-800 text-white px-4 py-2 rounded text-sm font-medium">質問する</button>
+                    </div>
+                    <div id="qa-answer-loading" class="hidden mt-4 flex items-center gap-2">
+                        <div class="w-4 h-4 border-2 border-slate-300 border-t-slate-800 rounded-full animate-spin"></div>
+                        <span class="text-xs text-slate-500">回答を生成中...</span>
+                    </div>
+                    <div id="qa-answer" class="mt-4 p-4 bg-white border border-slate-200 rounded text-sm text-slate-700 hidden leading-relaxed">
+                        <!-- Answer here -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script>
         let config = {
             apiKey: '',
@@ -141,27 +152,20 @@
 
         const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
 
-        // File Parsing Logic
+        // File Parsing
         document.getElementById('file-input').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            
             document.getElementById('file-name').innerText = `解析中...`;
             const fileType = file.name.split('.').pop().toLowerCase();
-            
             try {
                 let text = "";
-                if (fileType === 'pdf') {
-                    text = await parsePDF(file);
-                } else if (fileType === 'docx') {
-                    text = await parseDocx(file);
-                } else if (fileType === 'xlsx' || fileType === 'xls') {
-                    text = await parseExcel(file);
-                }
+                if (fileType === 'pdf') text = await parsePDF(file);
+                else if (fileType === 'docx') text = await parseDocx(file);
+                else if (fileType === 'xlsx' || fileType === 'xls') text = await parseExcel(file);
                 config.extractedFileText = text;
-                document.getElementById('file-name').innerText = `読込済: ${file.name}`;
+                document.getElementById('file-name').innerText = `読込完了: ${file.name}`;
             } catch (err) {
-                console.error(err);
                 document.getElementById('file-name').innerText = "解析失敗";
             }
         });
@@ -199,209 +203,172 @@
             const key = document.getElementById('api-key').value.trim();
             if (key) {
                 config.apiKey = key;
-                document.getElementById('api-status').innerText = "認証済";
-                document.getElementById('api-status').className = "text-xs text-emerald-600 font-bold";
+                document.getElementById('api-status').innerText = "設定済";
+                document.getElementById('api-status').classList.replace('text-slate-400', 'text-emerald-600');
             }
         }
 
         function inputProject() {
             const text = document.getElementById('project-text').value.trim();
-            if (!text) return;
-            config.projectData = text;
-            document.getElementById('project-badge').classList.remove('hidden');
-            checkReady();
+            if (text) { config.projectData = text; checkReady(); }
         }
 
         function inputResource() {
             const text = document.getElementById('resource-text').value.trim();
-            config.resourceData = text;
-            document.getElementById('resource-badge').classList.remove('hidden');
-            checkReady();
+            config.resourceData = text; checkReady();
         }
 
         function checkReady() {
             if (config.projectData && (config.resourceData || config.extractedFileText)) {
                 document.getElementById('match-button').disabled = false;
-                document.getElementById('match-hint').classList.add('hidden');
             }
         }
 
         async function startMatching() {
-            if (!config.apiKey) {
-                alert("APIキーを適用してください。");
-                return;
-            }
+            if (!config.apiKey) return alert("APIキーを設定してください");
+            
+            const container = document.getElementById('result-container');
+            const loading = document.getElementById('loading-view');
+            const content = document.getElementById('analysis-content');
+            const qaContainer = document.getElementById('qa-container');
 
-            const resultContainer = document.getElementById('result-container');
-            const loadingView = document.getElementById('loading-view');
-            const analysisContent = document.getElementById('analysis-content');
+            container.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            content.classList.add('hidden');
+            qaContainer.classList.add('hidden');
 
-            resultContainer.classList.remove('hidden');
-            loadingView.classList.remove('hidden');
-            analysisContent.classList.add('hidden');
-
-            resultContainer.scrollIntoView({ behavior: 'smooth' });
-
-            const combinedResource = `【テキスト情報】\n${config.resourceData}\n\n【ファイル抽出情報】\n${config.extractedFileText}`;
+            const resourceText = `補足情報: ${config.resourceData}\n経歴書内容: ${config.extractedFileText}`;
             
             const prompt = `
-            あなたは超一流のITコンサルタント兼SES営業チーフです。
-            「案件情報」と「要員情報」を冷徹かつ客観的に比較し、以下のJSONフォーマットで分析結果を出力してください。
-            特に「なぜその点数なのか」の分析をロジカルに深掘りしてください。
+            あなたはIT企業のSES営業・採用担当者として、事実に基づき淡々と評価を行ってください。「素晴らしい」等の過度な形容詞やAI的な誇張表現は排除し、ビジネス文章で回答してください。
 
-            JSON構造:
+            【判断基準】
+            1. 合計スコアが40点以下の場合は、明確に「提案不可」と判断し、その致命的な理由（スキル不足、経験不足等）を具体的に挙げてください。
+            2. スコアは、技術、業界経験、条件、リスクの4項目で算出してください。
+
+            【JSONフォーマット】
             {
               "score": 0-100の整数,
-              "score_analysis": {
-                 "skill": "技術スタックの一致度(0-100)",
-                 "experience": "業界・類似業務経験の一致度(0-100)",
-                 "condition": "単価・期間・場所・稼働の整合性(0-100)",
-                 "risk": "離脱リスクやスキル不足懸念の低さ(0-100)"
-              },
-              "detailed_breakdown": "なぜその評価点（score）になったのか、各指標に基づいた定性的な分析結果。不足している要素、過剰な要素を明確にする。",
-              "reasons": ["マッチングの根拠1", "マッチングの根拠2"],
-              "merits": ["顧客へのメリット1", "顧客へのメリット2"],
-              "demerits": ["想定されるリスク・デメリット1", "想定されるリスク・デメリット2"],
-              "final_judgment": "提案すべきか見送るべきかのライン判断とその戦略的理由",
-              "sales_pitch": "顧客の決裁者に刺さる、プロフェッショナルな紹介口上"
+              "breakdown": "なぜこの点数になったのかの事実ベースの分析。不足点や過剰な点を具体的に明記すること。",
+              "reason_positive": ["具体的な適合点1", "具体的な適合点2"],
+              "reason_negative": ["具体的な不足点・リスク1", "具体的な不足点・リスク2"],
+              "judgment": "提案すべきか否かと、その理由",
+              "sales_text": "顧客へ提示する紹介文（事実のみを簡潔に）"
             }
 
-            【案件情報】
-            ${config.projectData}
-
-            【要員情報】
-            ${combinedResource}
+            案件: ${config.projectData}
+            要員: ${resourceText}
             `;
 
             try {
-                const response = await fetch(`${API_URL}?key=${config.apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { responseMimeType: "application/json" }
-                    })
-                });
-
-                if (!response.ok) throw new Error("API疎通エラー");
-
-                const data = await response.json();
-                const result = JSON.parse(data.candidates[0].content.parts[0].text);
-                renderResult(result);
+                const res = await callGemini(prompt);
+                const data = JSON.parse(res);
+                renderResult(data);
+                qaContainer.classList.remove('hidden');
             } catch (err) {
-                loadingView.classList.add('hidden');
-                analysisContent.classList.remove('hidden');
-                analysisContent.innerHTML = `<div class="p-8 business-card text-red-600 bg-red-50 font-bold border-red-200">エラー: ${err.message}</div>`;
+                loading.classList.add('hidden');
+                content.classList.remove('hidden');
+                content.innerHTML = `<div class="p-4 bg-red-50 text-red-700 text-sm rounded">解析に失敗しました: ${err.message}</div>`;
             }
         }
 
-        function renderResult(data) {
-            const loadingView = document.getElementById('loading-view');
-            const analysisContent = document.getElementById('analysis-content');
-            loadingView.classList.add('hidden');
-            analysisContent.classList.remove('hidden');
-
-            const getScoreColor = (s) => s >= 80 ? 'text-blue-700' : (s >= 50 ? 'text-slate-700' : 'text-red-700');
-            const getBarColor = (s) => s >= 80 ? 'bg-blue-600' : (s >= 50 ? 'bg-slate-400' : 'bg-red-400');
-
-            analysisContent.innerHTML = `
-                <!-- Top Summary Card -->
-                <div class="business-card p-10 bg-white">
-                    <div class="flex flex-col md:flex-row gap-12 items-center">
-                        <div class="text-center md:border-r border-slate-200 md:pr-12">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Matching Score</h3>
-                            <div class="text-7xl font-black ${getScoreColor(data.score)} tracking-tighter">${data.score}<span class="text-xl font-bold text-slate-300 ml-1">/100</span></div>
-                        </div>
-                        
-                        <div class="flex-grow grid grid-cols-2 gap-x-8 gap-y-4 w-full">
-                            ${Object.entries(data.score_analysis).map(([key, val]) => `
-                                <div>
-                                    <div class="flex justify-between text-[10px] font-bold uppercase text-slate-500 mb-1.5">
-                                        <span>${key === 'skill' ? 'Technical Skill' : key === 'experience' ? 'Industry Exp' : key === 'condition' ? 'Condition Fit' : 'Risk Management'}</span>
-                                        <span>${val}%</span>
-                                    </div>
-                                    <div class="score-bar-bg">
-                                        <div class="h-full ${getBarColor(val)} rounded-full" style="width: ${val}%"></div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Analysis Process Section -->
-                <div class="business-card p-8 bg-slate-900 text-white">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center">
-                        <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span> Score Analysis / 評価プロセス分析
-                    </h4>
-                    <p class="text-slate-300 text-sm leading-relaxed font-medium">
-                        ${data.detailed_breakdown}
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Reasons & Merits -->
-                    <div class="space-y-8">
-                        <div class="business-card p-6 border-l-4 border-l-slate-800">
-                            <h4 class="text-sm font-bold text-slate-800 mb-4">適合の根拠</h4>
-                            <ul class="space-y-3 text-sm text-slate-600">
-                                ${data.reasons.map(r => `<li class="flex items-start"><span class="text-slate-400 mr-2">・</span>${r}</li>`).join('')}
-                            </ul>
-                        </div>
-                        <div class="business-card p-6 border-l-4 border-l-blue-600">
-                            <h4 class="text-sm font-bold text-blue-900 mb-4">顧客メリット</h4>
-                            <ul class="space-y-3 text-sm text-slate-600">
-                                ${data.merits.map(m => `<li class="flex items-start"><span class="text-blue-300 mr-2">・</span>${m}</li>`).join('')}
-                            </ul>
-                        </div>
-                    </div>
-
-                    <!-- Demerits & Judgment -->
-                    <div class="space-y-8">
-                        <div class="business-card p-6 border-l-4 border-l-red-400">
-                            <h4 class="text-sm font-bold text-red-900 mb-4">懸念点・リスク</h4>
-                            <ul class="space-y-3 text-sm text-slate-600">
-                                ${data.demerits.map(d => `<li class="flex items-start"><span class="text-red-300 mr-2">・</span>${d}</li>`).join('')}
-                            </ul>
-                        </div>
-                        <div class="business-card p-6 bg-slate-50">
-                            <h4 class="text-sm font-bold text-slate-800 mb-4">総合判断 / 戦略</h4>
-                            <p class="text-sm text-slate-700 leading-relaxed">${data.final_judgment}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sales Talk -->
-                <div class="business-card p-8 border-t-4 border-t-slate-800">
-                    <h4 class="text-sm font-bold text-slate-800 mb-5 uppercase tracking-wider">Professional Sales Pitch</h4>
-                    <div class="relative">
-                        <div class="absolute -left-2 -top-2 text-4xl text-slate-200 font-serif">“</div>
-                        <p id="sales-pitch-text" class="relative z-10 text-lg text-slate-700 font-medium leading-loose pl-4 italic">
-                            ${data.sales_pitch}
-                        </p>
-                        <div class="absolute -right-2 -bottom-2 text-4xl text-slate-200 font-serif">”</div>
-                    </div>
-                    <div class="mt-8 flex justify-end">
-                        <button onclick="copyPitch()" class="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-800 border-b border-slate-300 pb-1 transition-all">Copy to Clipboard</button>
-                    </div>
-                </div>
-            `;
-            analysisContent.scrollIntoView({ behavior: 'smooth' });
+        async function callGemini(prompt) {
+            const res = await fetch(`${API_URL}?key=${config.apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                })
+            });
+            if (!res.ok) throw new Error("API通信に失敗しました");
+            const json = await res.json();
+            return json.candidates[0].content.parts[0].text;
         }
 
-        function copyPitch() {
-            const text = document.getElementById('sales-pitch-text').innerText;
-            const dummy = document.createElement("textarea");
-            document.body.appendChild(dummy);
-            dummy.value = text;
-            dummy.select();
-            document.execCommand("copy");
-            document.body.removeChild(dummy);
+        function renderResult(data) {
+            const content = document.getElementById('analysis-content');
+            document.getElementById('loading-view').classList.add('hidden');
+            content.classList.remove('hidden');
+
+            const scoreColor = data.score >= 60 ? 'text-blue-700' : (data.score <= 40 ? 'text-red-600' : 'text-slate-700');
+            const alertBox = data.score <= 40 ? `
+                <div class="p-4 bg-red-50 border border-red-200 rounded text-red-800 text-sm">
+                    <strong>提案見送り推奨:</strong> ${data.judgment}
+                </div>
+            ` : '';
+
+            content.innerHTML = `
+                <div class="business-card p-8">
+                    <div class="flex items-center gap-8 border-b border-slate-100 pb-6 mb-6">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">マッチング点数</p>
+                            <p class="text-6xl font-black ${scoreColor}">${data.score}<span class="text-lg text-slate-300 ml-1">/100</span></p>
+                        </div>
+                        <div class="flex-grow">
+                            <p class="text-xs font-bold text-slate-800 mb-2">評価分析</p>
+                            <p class="text-sm text-slate-600 leading-relaxed">${data.breakdown}</p>
+                        </div>
+                    </div>
+                    ${alertBox}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="business-card p-5">
+                        <h4 class="text-xs font-bold text-slate-800 mb-3">適合・評価ポイント</h4>
+                        <ul class="text-sm text-slate-600 space-y-2">
+                            ${data.reason_positive.map(r => `<li>・ ${r}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="business-card p-5">
+                        <h4 class="text-xs font-bold text-slate-800 mb-3">不足・懸念事項</h4>
+                        <ul class="text-sm text-slate-600 space-y-2">
+                            ${data.reason_negative.map(r => `<li>・ ${r}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="business-card p-6 bg-slate-50">
+                    <h4 class="text-xs font-bold text-slate-800 mb-2">紹介文サンプル</h4>
+                    <p class="text-sm text-slate-700 leading-relaxed">${data.sales_text}</p>
+                </div>
+            `;
+        }
+
+        async function askQuestion() {
+            const input = document.getElementById('qa-input');
+            const question = input.value.trim();
+            const answerDiv = document.getElementById('qa-answer');
+            const loading = document.getElementById('qa-answer-loading');
             
-            const btn = event.target;
-            const original = btn.innerText;
-            btn.innerText = "COPIED!";
-            setTimeout(() => btn.innerText = original, 2000);
+            if (!question || !config.apiKey) return;
+
+            loading.classList.remove('hidden');
+            answerDiv.classList.add('hidden');
+
+            const resourceContext = `要員情報: ${config.resourceData}\n経歴書: ${config.extractedFileText}`;
+            const prompt = `
+            要員情報（経歴書）に基づいて以下の質問に回答してください。
+            【制約】
+            1. 事実のみを回答すること。
+            2. 経歴書に記載がない、または予測できないことは「記載がありません」とはっきり回答すること。
+            3. AI的な推測や、要員を擁護するような表現は一切不要です。
+            4. 箇条書きなどを用いて簡潔に回答してください。
+
+            質問: ${question}
+            ${resourceContext}
+            `;
+
+            try {
+                const res = await callGemini(prompt);
+                answerDiv.innerHTML = res.replace(/\n/g, '<br>');
+                answerDiv.classList.remove('hidden');
+            } catch (err) {
+                answerDiv.innerText = "回答の取得に失敗しました。";
+                answerDiv.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+            }
         }
     </script>
 </body>
